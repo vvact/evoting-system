@@ -1,3 +1,4 @@
+# users/views.py
 from django.contrib.auth import get_user_model
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
@@ -10,7 +11,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .models import OTP
 from .serializers import RegisterSerializer, OTPVerifySerializer, LoginSerializer
 
-# ✅ Import your new email utility
+# ✅ Import the email utility directly
 from users.utils.email import send_otp_email
 
 User = get_user_model()
@@ -35,7 +36,7 @@ class RegisterView(generics.CreateAPIView):
         # Get OTP
         otp = OTP.objects.filter(user=user).last()
 
-        # ✅ Send OTP via utility
+        # ✅ Send OTP directly (synchronously)
         send_otp_email(user.email, otp.code)
 
 
@@ -112,7 +113,7 @@ class ResendOTPView(generics.GenericAPIView):
             # Generate new OTP
             otp = OTP.generate_otp(user)
 
-            # ✅ Send via utility
+            # ✅ Send OTP directly
             send_otp_email(user.email, otp.code)
 
             return Response(
