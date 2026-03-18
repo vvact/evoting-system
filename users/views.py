@@ -1,6 +1,4 @@
-# users/views.py
 from django.contrib.auth import get_user_model
-from django.core.mail import send_mail
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 
@@ -11,6 +9,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import OTP
 from .serializers import RegisterSerializer, OTPVerifySerializer, LoginSerializer
+
+# ✅ Import your new email utility
+from users.utils.email import send_otp_email
 
 User = get_user_model()
 
@@ -25,24 +26,17 @@ class RegisterView(generics.CreateAPIView):
     permission_classes = [AllowAny]
 
     def perform_create(self, serializer):
-        # Save user normally
-        user = serializer.save()  # <-- DO NOT pass is_active here
+        user = serializer.save()
 
-        # Set user inactive until OTP verification
+        # Set inactive until OTP verified
         user.is_active = False
         user.save()
 
-        # Get the last OTP generated in serializer
+        # Get OTP
         otp = OTP.objects.filter(user=user).last()
 
-        # Send OTP via email
-        send_mail(
-            subject="Your OTP Code",
-            message=f"Welcome! Your OTP code is {otp.code}. It expires in 12 hours.",
-            from_email="no-reply@example.com",
-            recipient_list=[user.email],
-            fail_silently=False,
-        )
+        # ✅ Send OTP via utility
+        send_otp_email(user.email, otp.code)
 
 
 # ------------------------------
@@ -65,31 +59,34 @@ class OTPVerifyView(generics.GenericAPIView):
 
             if not otp:
                 return Response(
-                    {"detail": "Invalid OTP."}, status=status.HTTP_400_BAD_REQUEST
+                    {"detail": "Invalid OTP."},
+                    status=status.HTTP_400_BAD_REQUEST
                 )
 
             if not otp.is_valid():
                 return Response(
                     {"detail": "OTP has expired. Please request a new one."},
-                    status=status.HTTP_400_BAD_REQUEST,
+                    status=status.HTTP_400_BAD_REQUEST
                 )
 
             # Mark OTP as verified
             otp.verified = True
             otp.save()
 
-            # Mark user as active & verified
+            # Activate user
             user.is_active = True
             user.is_verified = True
             user.save()
 
             return Response(
-                {"message": "Account verified successfully"}, status=status.HTTP_200_OK
+                {"message": "Account verified successfully"},
+                status=status.HTTP_200_OK
             )
 
         except User.DoesNotExist:
             return Response(
-                {"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND
+                {"detail": "User not found."},
+                status=status.HTTP_404_NOT_FOUND
             )
 
 
@@ -97,38 +94,36 @@ class OTPVerifyView(generics.GenericAPIView):
 # Resend OTP Endpoint
 # ------------------------------
 class ResendOTPView(generics.GenericAPIView):
-    serializer_class = OTPVerifySerializer  # optional, if you want validation
+    serializer_class = OTPVerifySerializer
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
         email = request.data.get("email")
+
         if not email:
             return Response(
-                {"detail": "Email is required."}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Email is required."},
+                status=status.HTTP_400_BAD_REQUEST
             )
 
         try:
             user = User.objects.get(email=email)
 
-            # Generate a new OTP
+            # Generate new OTP
             otp = OTP.generate_otp(user)
 
-            # Send email
-            send_mail(
-                subject="Your new OTP",
-                message=f"Your OTP code is {otp.code}. It expires in 12 hours.",
-                from_email="no-reply@example.com",
-                recipient_list=[user.email],
-                fail_silently=False,
-            )
+            # ✅ Send via utility
+            send_otp_email(user.email, otp.code)
 
             return Response(
-                {"detail": "A new OTP has been sent."}, status=status.HTTP_200_OK
+                {"detail": "A new OTP has been sent."},
+                status=status.HTTP_200_OK
             )
 
         except User.DoesNotExist:
             return Response(
-                {"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND
+                {"detail": "User not found."},
+                status=status.HTTP_404_NOT_FOUND
             )
 
 
@@ -145,7 +140,6 @@ class LoginView(generics.GenericAPIView):
 
         user = serializer.validated_data["user"]
 
-        # Generate JWT tokens
         refresh = RefreshToken.for_user(user)
         access = refresh.access_token
 
