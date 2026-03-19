@@ -202,7 +202,7 @@ SIMPLE_JWT = {
 
 CORS_ALLOWED_ORIGINS = [
     "https://evoting-system-ozkc.onrender.com",
-    "https://evotproto.netlify.app/",            
+    "https://evotproto.netlify.app",            
 ]
 
 CORS_ALLOW_CREDENTIALS = True
