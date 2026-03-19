@@ -22,7 +22,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ------------------------------
 SECRET_KEY = config("SECRET_KEY", default="django-insecure-dev-key")  # use .env in production
 DEBUG = config("DEBUG", default=True, cast=bool)
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost").split(",")
+
+# 🌐 Allowed hosts
+ALLOWED_HOSTS = []
+
+# Add Render dynamic hostname
+render_hostname = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
+if render_hostname:
+    ALLOWED_HOSTS.append(render_hostname)
+
+# Add any from .env
+ALLOWED_HOSTS += config("ALLOWED_HOSTS", default="localhost,127.0.0.1").split(",")
+ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS]
+
+# CSRF Trusted Origins
+CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS if host not in ("localhost", "127.0.0.1")]
 
 # ------------------------------
 # Cloudinary Configuration
