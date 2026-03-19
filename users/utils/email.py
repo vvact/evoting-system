@@ -1,7 +1,6 @@
 from django.core.mail import send_mail
 from django.conf import settings
 
-
 def send_otp_email(email, code):
     subject = "Your OTP Code"
     message = f"""
@@ -19,5 +18,5 @@ Do not share this code with anyone.
         message,
         settings.DEFAULT_FROM_EMAIL,
         [email],
-        fail_silently=False,
+        fail_silently=False,  # ✅ prints errors to console if something fails
     )
