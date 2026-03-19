@@ -101,18 +101,20 @@ WSGI_APPLICATION = "config.wsgi.application"
 #         "NAME": BASE_DIR / "db.sqlite3",
 #     }
 # }
-
-# 🔹 Debug: print the DATABASE_URL to check formatting
-print(repr(config("DATABASE_URL")))
-
 import dj_database_url
-from decouple import config
+from decouple import config  # or use os.environ if you prefer
 
 DATABASES = {
     "default": dj_database_url.parse(
         config("DATABASE_URL"),
-        conn_max_age=600,
+        conn_max_age=0,  # 🔥 IMPORTANT for Supabase (pgBouncer)
+        ssl_require=True
     )
+}
+
+# Optional but recommended (extra safety)
+DATABASES["default"]["OPTIONS"] = {
+    "sslmode": "require",
 }
 
 
