@@ -12,7 +12,7 @@ class PoliticalPartyAdmin(admin.ModelAdmin):
         if obj.badge:
             return format_html(
                 '<img src="{}" style="width:50px; height:50px; border-radius:50%;" />',
-                obj.badge.url,
+                obj.badge.url,  # Cloudinary URL will work here
             )
         return "No Badge"
 
@@ -39,13 +39,13 @@ class CandidateAdmin(admin.ModelAdmin):
     search_fields = ("name", "position__title", "election__title")
     list_filter = ("position", "party", "election")
 
-    readonly_fields = ("votes",)  # make votes read-only
+    readonly_fields = ("votes",)
 
     def party_badge_preview(self, obj):
         if obj.party and obj.party.badge:
             return format_html(
                 '<img src="{}" style="width:40px; height:40px; border-radius:50%;" />',
-                obj.party.badge.url,
+                obj.party.badge.url,  # Cloudinary URL works directly
             )
         return "Independent"
 
@@ -55,7 +55,7 @@ class CandidateAdmin(admin.ModelAdmin):
         if obj.image:
             return format_html(
                 '<img src="{}" style="width:50px; height:50px; border-radius:50%;" />',
-                obj.image.url,
+                obj.image.url,  # Cloudinary URL works directly
             )
         return "No Image"
 
@@ -67,7 +67,7 @@ class CandidateAdmin(admin.ModelAdmin):
             old_obj = Candidate.objects.get(pk=obj.pk)
             obj.votes = old_obj.votes
 
-        # ✅ Prevent duplicate party candidate for the same position
+        # Prevent duplicate party candidate for the same position
         if obj.party:
             exists = (
                 Candidate.objects.filter(position=obj.position, party=obj.party)

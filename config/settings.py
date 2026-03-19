@@ -1,6 +1,17 @@
 from pathlib import Path
 import os
 from decouple import config
+from datetime import timedelta
+import dj_database_url
+from decouple import config
+
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+from decouple import config
+
+import os
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -13,7 +24,18 @@ SECRET_KEY = config("SECRET_KEY", default="django-insecure-dev-key")  # use .env
 DEBUG = config("DEBUG", default=True, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost").split(",")
 
+# ------------------------------
+# Cloudinary Configuration
+# ------------------------------
+cloudinary.config(
+    cloud_name=config("CLOUDINARY_CLOUD_NAME"),
+    api_key=config("CLOUDINARY_API_KEY"),
+    api_secret=config("CLOUDINARY_API_SECRET"),
+    secure=True,
+)
 
+# Use Cloudinary as default file storage
+DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
 # ------------------------------
 # Installed Apps
 # ------------------------------
@@ -28,6 +50,8 @@ INSTALLED_APPS = [
     # 3rd Party
     "rest_framework",
     "corsheaders",
+    "cloudinary",
+    "cloudinary_storage",
 
     # Local apps
     "users",
@@ -68,14 +92,27 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
+# # Database
+# # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
+
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.sqlite3",
+#         "NAME": BASE_DIR / "db.sqlite3",
+#     }
+# }
+
+# 🔹 Debug: print the DATABASE_URL to check formatting
+print(repr(config("DATABASE_URL")))
+
+import dj_database_url
+from decouple import config
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    "default": dj_database_url.parse(
+        config("DATABASE_URL"),
+        conn_max_age=600,
+    )
 }
 
 
@@ -133,7 +170,6 @@ REST_FRAMEWORK = {
 }
 
 
-from datetime import timedelta
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=6),
@@ -154,14 +190,3 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', cast=bool)
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
-
-
-
-import os
-
-CELERY_BROKER_URL = os.getenv("REDIS_URL")
-CELERY_RESULT_BACKEND = os.getenv("REDIS_URL")
-CELERY_ACCEPT_CONTENT = ["json"]
-CELERY_TASK_SERIALIZER = "json"
-CELERY_RESULT_SERIALIZER = "json"
-CELERY_TIMEZONE = "Africa/Nairobi"

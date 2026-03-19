@@ -14,9 +14,16 @@ class PoliticalPartySerializer(serializers.ModelSerializer):
         fields = ("id", "name", "abbreviation", "badge_url")
 
     def get_badge_url(self, obj):
-        request = self.context.get("request")
-        if obj.badge and request:
-            return request.build_absolute_uri(obj.badge.url)
+        # Return full URL to Cloudinary badge
+        if obj.badge:
+            try:
+                # If request context exists, build absolute URI
+                request = self.context.get("request")
+                if request:
+                    return request.build_absolute_uri(obj.badge.url)
+            except Exception:
+                pass
+            return obj.badge.url
         return None
 
 
@@ -33,7 +40,7 @@ class CandidateSerializer(serializers.ModelSerializer):
     )
 
     image_url = serializers.SerializerMethodField()
-    votes = serializers.SerializerMethodField()  # NEW FIELD
+    votes = serializers.SerializerMethodField()  # vote count
 
     class Meta:
         model = Candidate
@@ -44,18 +51,24 @@ class CandidateSerializer(serializers.ModelSerializer):
             "image_url",
             "party",
             "party_id",
-            "votes",  # include current vote count
+            "votes",
         )
 
     def get_image_url(self, obj):
-        request = self.context.get("request")
-        if obj.image and request:
-            return request.build_absolute_uri(obj.image.url)
+        # Return full URL to Cloudinary image
+        if obj.image:
+            try:
+                request = self.context.get("request")
+                if request:
+                    return request.build_absolute_uri(obj.image.url)
+            except Exception:
+                pass
+            return obj.image.url
         return None
 
     def get_votes(self, obj):
         # Count votes for this candidate
-        return obj.votes_received.count()
+        return obj.votes_received.count() if hasattr(obj, "votes_received") else obj.votes
 
 
 # ==============================
@@ -81,22 +94,17 @@ class PositionSerializer(serializers.ModelSerializer):
         )
 
     def get_has_voted(self, obj):
-        user = self.context.get("request").user
-        if user.is_anonymous:
+        user = self.context.get("request").user if self.context.get("request") else None
+        if not user or user.is_anonymous:
             return False
         return Vote.objects.filter(voter=user, position=obj).exists()
 
     def get_can_vote(self, obj):
-        request = self.context.get("request")
-        user = request.user if request else None
-
+        user = self.context.get("request").user if self.context.get("request") else None
         if not user or user.is_anonymous:
-            return False  # anonymous users cannot vote
-
-        # Can vote if election is active AND user hasn't voted for this position
+            return False
         election_active = obj.election.is_active
         has_voted = Vote.objects.filter(voter=user, position=obj).exists()
-
         return election_active and not has_voted
 
     def get_total_candidates(self, obj):

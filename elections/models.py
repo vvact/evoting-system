@@ -1,6 +1,8 @@
 from django.db import models
 from django.utils.text import slugify
-
+import cloudinary
+import cloudinary.uploader
+import cloudinary.models
 
 # -------------------------
 # Political Party Model
@@ -8,7 +10,7 @@ from django.utils.text import slugify
 class PoliticalParty(models.Model):
     name = models.CharField(max_length=255, unique=True)
     abbreviation = models.CharField(max_length=10, blank=True)
-    badge = models.ImageField(upload_to="party_badges/", blank=True, null=True)
+    badge = cloudinary.models.CloudinaryField('badge', blank=True, null=True)
     description = models.TextField(blank=True)
 
     class Meta:
@@ -91,7 +93,7 @@ class Candidate(models.Model):
     )
     description = models.TextField(blank=True)
     votes = models.PositiveIntegerField(default=0)
-    image = models.ImageField(upload_to="candidate_images/", blank=True, null=True)
+    image = cloudinary.models.CloudinaryField('image', blank=True, null=True)
 
     class Meta:
         unique_together = (
