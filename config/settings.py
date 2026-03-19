@@ -35,9 +35,9 @@ if render_hostname:
 ALLOWED_HOSTS += config("ALLOWED_HOSTS", default="localhost,127.0.0.1").split(",")
 ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS]
 
-# CSRF Trusted Origins
-CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS if host not in ("localhost", "127.0.0.1")]
-
+CSRF_TRUSTED_ORIGINS = [
+    "https://evoting-system-ozkc.onrender.com"
+]
 # ------------------------------
 # Cloudinary Configuration
 # ------------------------------
@@ -198,12 +198,14 @@ SIMPLE_JWT = {
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
 }
 
-CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS", default="http://localhost:5173").split(",")
-CORS_ALLOW_CREDENTIALS = True
 
-CSRF_TRUSTED_ORIGINS = [
-    "https://evoting-system-ozkc.onrender.com"
+
+CORS_ALLOWED_ORIGINS = [
+    "https://evoting-system-ozkc.onrender.com",
+    "https://evotingcounty.netlify.app",            
 ]
+
+CORS_ALLOW_CREDENTIALS = True
 
 #Email setup
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
