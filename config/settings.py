@@ -186,7 +186,10 @@ SIMPLE_JWT = {
 
 CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS", default="http://localhost:5173").split(",")
 CORS_ALLOW_CREDENTIALS = True
-CSRF_TRUSTED_ORIGINS = ["https://*.onrender.com"]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://evoting-system-ozkc.onrender.com"
+]
 
 #Email setup
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
