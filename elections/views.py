@@ -44,7 +44,29 @@ class CandidateListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         election_id = self.kwargs.get("election_id")
-        return Candidate.objects.filter(election_id=election_id)
+
+        # Define the desired order of positions
+        POSITION_ORDER = ["Governor", "Senator", "Members of the County Assembly"]
+
+        # Fetch candidates for this election
+        queryset = Candidate.objects.filter(election_id=election_id)
+
+        # Annotate with a sort index based on POSITION_ORDER
+        from django.db.models import Case, When, Value, IntegerField
+
+        order_cases = [
+            When(position=pos, then=Value(index)) for index, pos in enumerate(POSITION_ORDER)
+        ]
+
+        queryset = queryset.annotate(
+            position_order=Case(
+                *order_cases,
+                default=Value(len(POSITION_ORDER)),  # Other positions come last
+                output_field=IntegerField(),
+            )
+        ).order_by("position_order", "name")  # Sort by position, then name
+
+        return queryset
 
     def perform_create(self, serializer):
         election_id = self.kwargs.get("election_id")
