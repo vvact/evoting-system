@@ -1,24 +1,20 @@
 from django.core.mail import send_mail
 from django.conf import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 def send_otp_email(email, code):
-    subject = "Your OTP Code"
-
-    message = f"Your OTP is {code}"
-
-    html_message = f"""
-    <h2>Welcome to eVoting</h2>
-    <p>Your OTP code is:</p>
-    <h1>{code}</h1>
-    <p>This code expires in 5 minutes.</p>
-    <p><b>Do not share this code.</b></p>
-    """
-
-    send_mail(
-        subject,
-        message,
-        settings.DEFAULT_FROM_EMAIL,
-        [email],
-        fail_silently=False,
-        html_message=html_message,
-    )
+    try:
+        send_mail(
+            "Your OTP Code",
+            f"Your OTP is {code}",
+            settings.DEFAULT_FROM_EMAIL,
+            [email],
+            fail_silently=False,
+        )
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send OTP to {email}: {e}")
+        print(f"Email error: {e}")
+        return False
