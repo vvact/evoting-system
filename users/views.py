@@ -11,11 +11,14 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .models import OTP
 from .serializers import RegisterSerializer, OTPVerifySerializer, LoginSerializer
 
-# ✅ Import the email utility directly
+# ✅ Email utility
 from users.utils.email import send_otp_email
 
-User = get_user_model()
+import logging
 
+logger = logging.getLogger(__name__)
+
+User = get_user_model()
 
 # ------------------------------
 # Register Endpoint
@@ -33,11 +36,12 @@ class RegisterView(generics.CreateAPIView):
         user.is_active = False
         user.save()
 
-        # Get OTP
+        # Get latest OTP
         otp = OTP.objects.filter(user=user).last()
 
-        # ✅ Send OTP directly (synchronously)
-        send_otp_email(user.email, otp.code)
+        # ✅ Send OTP safely
+        if not send_otp_email(user.email, otp.code):
+            logger.warning(f"Failed to send OTP to {user.email}. User still created.")
 
 
 # ------------------------------
@@ -113,13 +117,17 @@ class ResendOTPView(generics.GenericAPIView):
             # Generate new OTP
             otp = OTP.generate_otp(user)
 
-            # ✅ Send OTP directly
-            send_otp_email(user.email, otp.code)
-
-            return Response(
-                {"detail": "A new OTP has been sent."},
-                status=status.HTTP_200_OK
-            )
+            # ✅ Send OTP safely
+            if send_otp_email(user.email, otp.code):
+                return Response(
+                    {"detail": "A new OTP has been sent."},
+                    status=status.HTTP_200_OK
+                )
+            else:
+                return Response(
+                    {"detail": "OTP could not be sent. Try again later."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
 
         except User.DoesNotExist:
             return Response(
