@@ -193,12 +193,11 @@ SIMPLE_JWT = {
 }
 
 
-CORS_ALLOW_ALL_ORIGINS = True 
-
-# CORS_ALLOWED_ORIGINS = [
-#     "https://evoting-system-ozkc.onrender.com",
-#     "https://evotproto.netlify.app",            
-# ]
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOWED_ORIGINS = [
+    "https://evotingcounty.netlify.app",
+    "https://evoting-system-ozkc.onrender.com",
+]
 
 CORS_ALLOW_CREDENTIALS = True
 
